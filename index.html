@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>頭城農場O形縱走 梗枋・坪溪・象寮古道・岩藏山</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;900&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <style>
+    :root {
+      --bg: #1a1a14;
+      --gold: #b8972a;
+      --cream: #f5f0e8;
+      --dim: rgba(245,240,232,0.7);
+      --card: #242420;
+      --moss: #5a6b3a;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--cream);
+      font-family: 'Noto Sans TC', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 0 2rem 6rem;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-family: 'Noto Serif TC', serif;
+      font-weight: 900;
+      font-size: clamp(2.8rem, 8vw, 5.5rem);
+      color: var(--cream);
+      line-height: 1.15;
+      letter-spacing: 0.06em;
+      margin-bottom: 1.6rem;
+      animation: fadeUp 1s ease both;
+    }
+
+    .hero-sub {
+      font-size: clamp(0.95rem, 2vw, 1.15rem);
+      color: var(--dim);
+      letter-spacing: 0.12em;
+      line-height: 2.2;
+      animation: fadeUp 1s 0.2s ease both;
+    }
+
+    /* ── SECTION ── */
+    .section {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 4rem 2rem;
+    }
+
+    .section-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--gold);
+      font-weight: 500;
+      margin-bottom: 0.7rem;
+    }
+
+    h2 {
+      font-family: 'Noto Serif TC', serif;
+      font-weight: 900;
+      font-size: clamp(1.5rem, 4vw, 2.2rem);
+      color: var(--cream);
+      line-height: 1.3;
+      margin-bottom: 2rem;
+      letter-spacing: 0.04em;
+    }
+
+    h2.alert { color: #c0392b; }
+
+    /* ── TIMELINE ── */
+    .timeline {
+      position: relative;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 5.2rem;
+      top: 0; bottom: 0;
+      width: 1px;
+      background: linear-gradient(to bottom, transparent, rgba(184,151,42,0.35) 5%, rgba(184,151,42,0.35) 95%, transparent);
+    }
+
+    .tl-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 1.6rem;
+      padding: 0.8rem 0;
+      opacity: 0;
+      transform: translateX(-14px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .tl-item.visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    .tl-time {
+      min-width: 4.5rem;
+      font-size: 0.88rem;
+      color: var(--gold);
+      letter-spacing: 0.04em;
+      text-align: right;
+      padding-top: 0.15rem;
+      font-family: 'Noto Serif TC', serif;
+    }
+
+    .tl-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--gold);
+      flex-shrink: 0;
+      margin-top: 0.45rem;
+      box-shadow: 0 0 0 3px rgba(184,151,42,0.18);
+    }
+
+    .tl-text {
+      font-size: 0.96rem;
+      color: var(--dim);
+      line-height: 1.7;
+    }
+
+    .tl-text strong { color: var(--cream); }
+
+    /* ── CARDS ── */
+    .card-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.2rem;
+    }
+
+    @media (max-width: 560px) {
+      .card-grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(184,151,42,0.15);
+      border-radius: 6px;
+      padding: 1.5rem;
+    }
+
+    .card h3 {
+      font-family: 'Noto Serif TC', serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--cream);
+      margin-bottom: 0.8rem;
+    }
+
+    .card p {
+      font-size: 0.88rem;
+      color: var(--dim);
+      line-height: 1.8;
+      margin-bottom: 0.3rem;
+    }
+
+    .card a {
+      display: inline-block;
+      margin-top: 0.9rem;
+      font-size: 0.82rem;
+      color: var(--gold);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(184,151,42,0.35);
+      transition: color 0.2s;
+    }
+
+    .card a:hover { color: #d4a83a; }
+
+    /* ── MAP ── */
+    .route-map {
+      height: 420px;
+      border: 1px solid rgba(184,151,42,0.15);
+      border-radius: 6px;
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    .route-map.leaflet-container {
+      background: var(--card);
+      font-family: 'Noto Sans TC', sans-serif;
+    }
+
+    @media (max-width: 560px) {
+      .route-map { height: 340px; }
+      .route-map .leaflet-control-attribution { font-size: 10px; }
+    }
+
+    .map-fallback {
+      padding: 2rem;
+      font-size: 0.9rem;
+      color: var(--dim);
+    }
+
+    .time-pill span {
+      position: absolute;
+      left: 0;
+      top: 0;
+      white-space: nowrap;
+      padding: 1px 8px;
+      border-radius: 999px;
+      background: rgba(26,26,20,0.9);
+      border: 1px solid rgba(184,151,42,0.6);
+      color: var(--gold);
+      font-family: 'Noto Serif TC', serif;
+      font-size: 12px;
+      line-height: 1.6;
+      letter-spacing: 0.04em;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+      cursor: pointer;
+    }
+
+    .time-pill.r span { transform: translate(10px, -50%); }
+    .time-pill.b span { transform: translate(-50%, 9px); }
+
+    .time-pill.start span {
+      background: var(--cream);
+      border-color: var(--gold);
+      color: var(--bg);
+      font-weight: 600;
+    }
+
+    .route-map .leaflet-popup-content-wrapper,
+    .route-map .leaflet-popup-tip {
+      background: var(--card);
+      color: var(--cream);
+      box-shadow: 0 3px 14px rgba(0,0,0,0.5);
+    }
+
+    .route-map .leaflet-popup-content-wrapper {
+      border: 1px solid rgba(184,151,42,0.3);
+      border-radius: 6px;
+    }
+
+    .route-map .leaflet-popup-content {
+      margin: 10px 18px 10px 12px;
+      font-size: 13px;
+      line-height: 1.8;
+    }
+
+    .route-map .leaflet-popup-content .t {
+      color: var(--gold);
+      font-family: 'Noto Serif TC', serif;
+      margin-right: 0.5em;
+    }
+
+    .route-map a.leaflet-popup-close-button { color: var(--dim); }
+
+    /* ── GEAR ── */
+    .gear-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(195px, 1fr));
+      gap: 0.8rem;
+      list-style: none;
+    }
+
+    .gear-list li {
+      background: var(--card);
+      border-left: 3px solid var(--moss);
+      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
+      color: var(--dim);
+      border-radius: 0 4px 4px 0;
+    }
+
+    /* ── WEATHER CARD ── */
+    .weather-card {
+      background: var(--card);
+      border: 1px solid rgba(184,151,42,0.15);
+      border-radius: 6px;
+      padding: 1.8rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1.8rem;
+      flex-wrap: wrap;
+    }
+
+    .weather-icon { font-size: 2.8rem; }
+
+    .weather-info h3 {
+      font-family: 'Noto Serif TC', serif;
+      color: var(--cream);
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .weather-info a {
+      font-size: 0.82rem;
+      color: var(--gold);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(184,151,42,0.35);
+    }
+
+    /* ── JOIN ── */
+    .join {
+      text-align: center;
+      padding: 5rem 2rem;
+    }
+
+    .join h2 { margin-bottom: 2rem; }
+
+    .join-btn {
+      display: inline-block;
+      background: var(--gold);
+      color: var(--bg);
+      font-family: 'Noto Serif TC', serif;
+      font-weight: 600;
+      font-size: 1.05rem;
+      letter-spacing: 0.08em;
+      padding: 1rem 2.8rem;
+      border-radius: 4px;
+      text-decoration: none;
+      line-height: 1.8;
+      transition: background 0.2s, transform 0.2s;
+    }
+
+    .join-btn:hover {
+      background: #d4a83a;
+      transform: translateY(-2px);
+    }
+
+    /* ── RULE ── */
+    .rule {
+      height: 1px;
+      background: rgba(184,151,42,0.15);
+      max-width: 820px;
+      margin: 0 auto;
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible { opacity: 1; transform: none; }
+  </style>
+</head>
+<body>
+
+  <!-- HERO -->
+  <div class="hero">
+    <h1>晴登雨讀</h1>
+    <p class="hero-sub">
+      頭城農場O形縱走<br/>
+      梗枋・坪溪・象寮古道・岩藏山
+    </p>
+  </div>
+
+  <div class="rule"></div>
+
+  <!-- ITINERARY -->
+  <div class="section reveal" id="itinerary">
+    <div class="section-label">行程規劃</div>
+    <h2>2026年12月5日（六）</h2>
+    <div class="timeline">
+      <div class="tl-item">
+        <span class="tl-time">09:30</span>
+        <span class="tl-dot"></span>
+        <span class="tl-text">龜山車站</span>
+      </div>
+      <div class="tl-item">
+        <span class="tl-time">10:00</span>
+        <span class="tl-dot"></span>
+        <span class="tl-text">頭城農場（梗枋古道登山口）</span>
+      </div>
+      <div class="tl-item">
+        <span class="tl-time">10:30</span>
+        <span class="tl-dot"></span>
+        <span class="tl-text">古厝</span>
+      </div>
+      <div class="tl-item">
+        <span class="tl-time">11:10</span>
+        <span class="tl-dot"></span>
+        <span class="tl-text">展望處</span>
+      </div>
+      <div class="tl-item">
+        <span class="tl-time">11:50</span>
+        <span class="tl-dot"></span>
+        <span class="tl-text">保安林界（全程最高點）</span>
+      </div>
+      <div class="tl-item">
+        <span class="tl-time">12:00</span>
+        <span class="tl-dot"></span>
+        <span class="tl-text">過坪溪</span>
+      </div>
+      <div class="tl-item">
+        <span class="tl-time">12:20</span>
+        <span class="tl-dot"></span>
+        <span class="tl-text">接坪溪古道（休息）</span>
+      </div>
+      <div class="tl-item">
+        <span class="tl-time">12:50</span>
+        <span class="tl-dot"></span>
+        <span class="tl-text">過溪</span>
+      </div>
+      <div class="tl-item">
+        <span class="tl-time">13:05</span>
+        <span class="tl-dot"></span>
+        <span class="tl-text">龜山島觀景台（休息用餐）</span>
+      </div>
+      <div class="tl-item">
+        <span class="tl-time">13:30</span>
+        <span class="tl-dot"></span>
+        <span class="tl-text">左下接象寮古道</span>
+      </div>
+      <div class="tl-item">
+        <span class="tl-time">13:50</span>
+        <span class="tl-dot"></span>
+        <span class="tl-text">梗枋溪鐵橋</span>
+      </div>
+      <div class="tl-item">
+        <span class="tl-time">13:55</span>
+        <span class="tl-dot"></span>
+        <span class="tl-text">石坑山叉路口（不上石坑山）</span>
+      </div>
+      <div class="tl-item">
+        <span class="tl-time">14:10</span>
+        <span class="tl-dot"></span>
+        <span class="tl-text">往明湖福安宮叉路口（取左）</span>
+      </div>
+      <div class="tl-item">
+        <span class="tl-time">14:40</span>
+        <span class="tl-dot"></span>
+        <span class="tl-text">明湖福安宮・荷花池（休息）</span>
+      </div>
+      <div class="tl-item">
+        <span class="tl-time">15:25</span>
+        <span class="tl-dot"></span>
+        <span class="tl-text">岩藏山</span>
+      </div>
+      <div class="tl-item">
+        <span class="tl-time">15:40</span>
+        <span class="tl-dot"></span>
+        <span class="tl-text">接回馬路（百合陵園）</span>
+      </div>
+      <div class="tl-item">
+        <span class="tl-time">15:50</span>
+        <span class="tl-dot"></span>
+        <span class="tl-text">兩真宮</span>
+      </div>
+      <div class="tl-item">
+        <span class="tl-time">16:10</span>
+        <span class="tl-dot"></span>
+        <span class="tl-text">龜山車站（搭乘火車返程）</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="rule"></div>
+
+  <!-- MAP -->
+  <div class="section reveal">
+    <div class="section-label">路線地圖</div>
+    <div id="route-map" class="route-map"></div>
+  </div>
+
+  <div class="rule"></div>
+
+  <!-- TRANSPORT -->
+  <div class="section reveal">
+    <div class="section-label">交通資訊</div>
+    <h2>去程 ／ 回程</h2>
+    <div class="card-grid">
+      <div class="card">
+        <h3>🚃 去程</h3>
+        <p>09:30 <strong style="color:var(--cream)">台鐵龜山車站</strong> 集合</p>
+      </div>
+      <div class="card">
+        <h3>🚃 回程</h3>
+        <p><strong style="color:var(--cream)">台鐵龜山車站</strong></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="rule"></div>
+
+  <!-- GEAR -->
+  <div class="section reveal">
+    <div class="section-label">裝備清單</div>
+    <h2>必備裝備</h2>
+    <ul class="gear-list">
+      <li>💧 水</li>
+      <li>🍱 午餐 ＆ 行動糧</li>
+      <li>☕ 杯子（會燒熱水泡茶喝咖啡）</li>
+      <li>🔦 頭燈（含備用電池）</li>
+      <li>🧢 帽子（防曬）</li>
+      <li>🧥 雨衣、雨褲</li>
+      <li>👟 登山鞋（建議）</li>
+    </ul>
+  </div>
+
+  <div class="rule"></div>
+
+  <!-- WEATHER -->
+  <div class="section reveal">
+    <div class="section-label">天氣預報</div>
+    <h2 class="alert">若降雨機率超過30%，則順延至下一週</h2>
+    <div class="weather-card">
+      <div class="weather-icon">⛅</div>
+      <div class="weather-info">
+        <h3>中央氣象署 — 頭城鎮天氣預報</h3>
+        <a href="https://www.cwa.gov.tw/V8/C/W/Town/Town.html?TID=1000204" target="_blank">前往氣象預報頁面 →</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="rule"></div>
+
+  <!-- JOIN -->
+  <div class="join reveal">
+    <h2>報名</h2>
+    <a href="https://line.me/ti/g/bVspqkkevX" target="_blank" class="join-btn">
+      點我加入LINE群組<br/>即報名完成
+    </a>
+  </div>
+
+  <script>
+    const els = document.querySelectorAll('.reveal, .tl-item');
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          const el = e.target;
+          const delay = el.classList.contains('tl-item')
+            ? Array.from(el.parentNode.children).indexOf(el) * 70 : 0;
+          setTimeout(() => el.classList.add('visible'), delay);
+          obs.unobserve(el);
+        }
+      });
+    }, { threshold: 0.1 });
+    els.forEach(el => obs.observe(el));
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script>
+    // 路線地圖：軌跡由 GPX 簡化而來，已去掉石坑山來回
+    (function () {
+      var el = document.getElementById('route-map');
+      if (!el) return;
+      if (!window.L) {
+        el.innerHTML = '<p class="map-fallback">地圖載入失敗，請重新整理頁面。</p>';
+        return;
+      }
+
+      var ROUTE = [
+        [24.90486,121.85896], [24.90489,121.85884], [24.90534,121.85802], [24.90555,121.85728], [24.90558,121.85684], [24.90598,121.85545],
+        [24.90615,121.85514], [24.90645,121.85481], [24.90669,121.85382], [24.90695,121.85369], [24.90702,121.85361], [24.90702,121.8535],
+        [24.90705,121.8536], [24.90669,121.85276], [24.90672,121.85235], [24.90668,121.85211], [24.907,121.85076], [24.90727,121.85023],
+        [24.90722,121.85031], [24.90728,121.85039], [24.90764,121.85041], [24.90769,121.85031], [24.90786,121.85018], [24.90817,121.84971],
+        [24.90876,121.84822], [24.90885,121.84815], [24.9091,121.8482], [24.90936,121.84785], [24.90945,121.84765], [24.90947,121.84742],
+        [24.90938,121.84695], [24.90933,121.84689], [24.90939,121.84648], [24.9095,121.8464], [24.90949,121.8465], [24.90937,121.84647],
+        [24.90943,121.84629], [24.90938,121.84636], [24.9095,121.84638], [24.90946,121.84646], [24.9094,121.84638], [24.90942,121.8463],
+        [24.90933,121.84625], [24.90933,121.84614], [24.90943,121.84616], [24.90951,121.8459], [24.90958,121.84587], [24.90966,121.84573],
+        [24.90966,121.84565], [24.90995,121.84558], [24.91,121.84538], [24.91008,121.8453], [24.91012,121.84497], [24.91019,121.84498],
+        [24.91034,121.84446], [24.91041,121.8444], [24.91062,121.84438], [24.91075,121.84417], [24.91087,121.84413], [24.91081,121.84393],
+        [24.91091,121.84349], [24.91104,121.84327], [24.91113,121.84324], [24.91129,121.84309], [24.9114,121.84287], [24.91142,121.84277],
+        [24.91131,121.84257], [24.91134,121.84242], [24.91117,121.84237], [24.9111,121.84227], [24.91091,121.84218], [24.91081,121.84216],
+        [24.91067,121.84224], [24.91049,121.84209], [24.91055,121.84216], [24.9105,121.8421], [24.9105,121.842], [24.91052,121.84213],
+        [24.91058,121.84193], [24.91066,121.84196], [24.91065,121.84185], [24.91079,121.8417], [24.9108,121.84158], [24.91088,121.84153],
+        [24.91096,121.84158], [24.91105,121.84156], [24.91126,121.84132], [24.91136,121.84135], [24.91138,121.84126], [24.91129,121.84117],
+        [24.91136,121.84103], [24.91153,121.84104], [24.91145,121.84092], [24.91198,121.84039], [24.91213,121.84053], [24.91218,121.84023],
+        [24.91234,121.84013], [24.91281,121.83988], [24.91291,121.83987], [24.91362,121.83994], [24.91371,121.83998], [24.91372,121.84017],
+        [24.9138,121.84015], [24.91394,121.84001], [24.91412,121.83962], [24.91419,121.83958], [24.91431,121.83965], [24.91443,121.83952],
+        [24.91436,121.83957], [24.91444,121.83965], [24.91447,121.83957], [24.91446,121.83966], [24.91439,121.83959], [24.91448,121.83962],
+        [24.91449,121.83953], [24.91443,121.83962], [24.91447,121.83955], [24.91444,121.83968], [24.91437,121.83948], [24.91445,121.83935],
+        [24.91412,121.83903], [24.91413,121.83913], [24.91414,121.83903], [24.91413,121.83914], [24.91413,121.839], [24.91418,121.83907],
+        [24.91417,121.83897], [24.91414,121.83907], [24.91422,121.83903], [24.91414,121.83901], [24.914,121.83886], [24.91336,121.83864],
+        [24.91316,121.8385], [24.91322,121.83856], [24.91312,121.83849], [24.91292,121.83848], [24.91284,121.83838], [24.91266,121.83831],
+        [24.91258,121.83828], [24.91237,121.83835], [24.91224,121.83823], [24.91227,121.83831], [24.91221,121.83827], [24.91229,121.8382],
+        [24.91221,121.83811], [24.91172,121.83802], [24.91162,121.83792], [24.9105,121.83739], [24.9101,121.83701], [24.90954,121.83666],
+        [24.90932,121.83638], [24.90916,121.83625], [24.90862,121.83615], [24.9084,121.83625], [24.90805,121.83603], [24.90779,121.83594],
+        [24.90776,121.83605], [24.90783,121.83599], [24.90776,121.83598], [24.90784,121.83602], [24.90775,121.83603], [24.90784,121.83601],
+        [24.90789,121.83594], [24.90756,121.83569], [24.90733,121.83577], [24.90726,121.8357], [24.90723,121.83581], [24.90707,121.83557],
+        [24.90714,121.8356], [24.90685,121.83555], [24.90676,121.83559], [24.90672,121.8357], [24.90665,121.8357], [24.90586,121.83615],
+        [24.90594,121.83613], [24.90596,121.83602], [24.90591,121.83612], [24.9058,121.83613], [24.90517,121.83585], [24.90524,121.83592],
+        [24.90516,121.83587], [24.90522,121.83598], [24.90516,121.83615], [24.90495,121.83648], [24.90498,121.83696], [24.9049,121.83705],
+        [24.90406,121.83751], [24.90364,121.83767], [24.90346,121.83777], [24.90335,121.83793], [24.90254,121.83778], [24.90229,121.8384],
+        [24.90214,121.83895], [24.90212,121.83964], [24.90207,121.83986], [24.90194,121.84003], [24.90161,121.84021], [24.90152,121.84018],
+        [24.90136,121.83999], [24.90132,121.84008], [24.90132,121.84019], [24.90155,121.8406], [24.90158,121.8408], [24.90123,121.84105],
+        [24.90115,121.84098], [24.90123,121.84105], [24.90107,121.84115], [24.90104,121.8414], [24.90097,121.84151], [24.90075,121.84159],
+        [24.90059,121.84173], [24.90044,121.84216], [24.90026,121.84209], [24.9,121.84216], [24.89989,121.84273], [24.89974,121.84269],
+        [24.89956,121.84285], [24.89955,121.84293], [24.89948,121.84298], [24.89938,121.84294], [24.89931,121.84299], [24.89933,121.84333],
+        [24.89933,121.84321], [24.89927,121.84311], [24.89909,121.84327], [24.899,121.84345], [24.89905,121.84367], [24.89936,121.84417],
+        [24.89924,121.84421], [24.8991,121.84416], [24.89898,121.84396], [24.89883,121.8441], [24.89897,121.84431], [24.89895,121.84495],
+        [24.89888,121.84493], [24.89888,121.84504], [24.8988,121.84516], [24.89861,121.8453], [24.89852,121.84553], [24.89841,121.84548],
+        [24.89835,121.84558], [24.89832,121.84567], [24.8984,121.84577], [24.89851,121.84577], [24.89851,121.84587], [24.89842,121.8458],
+        [24.8981,121.84572], [24.89805,121.84581], [24.89789,121.84594], [24.89789,121.84606], [24.89797,121.84624], [24.89795,121.84635],
+        [24.89803,121.84642], [24.89779,121.84667], [24.89764,121.84699], [24.89734,121.84699], [24.89716,121.84691], [24.89699,121.84701],
+        [24.89701,121.84712], [24.89685,121.84701], [24.89678,121.84705], [24.89673,121.84695], [24.89668,121.84703], [24.89659,121.84701],
+        [24.89652,121.84712], [24.89665,121.84699], [24.89683,121.84701], [24.89676,121.84697], [24.8967,121.84707], [24.89672,121.84695],
+        [24.89678,121.847], [24.89668,121.84705], [24.89701,121.84686], [24.89692,121.8469], [24.89699,121.84694], [24.89699,121.84702],
+        [24.89704,121.84687], [24.89711,121.84684], [24.89689,121.8467], [24.89694,121.84681], [24.89686,121.84693], [24.89662,121.84708],
+        [24.89676,121.84708], [24.89683,121.84699], [24.89668,121.84712], [24.89679,121.84708], [24.89691,121.84714], [24.8969,121.84723],
+        [24.89683,121.84728], [24.89667,121.84722], [24.89664,121.84737], [24.89645,121.84775], [24.89647,121.848], [24.89652,121.8481],
+        [24.89646,121.84816], [24.89652,121.84824], [24.89651,121.84837], [24.89642,121.84843], [24.89646,121.84851], [24.89643,121.84861],
+        [24.8963,121.84877], [24.89638,121.84905], [24.89633,121.84959], [24.89636,121.8498], [24.89632,121.84987], [24.89641,121.84991],
+        [24.89654,121.8502], [24.89653,121.85032], [24.89658,121.85052], [24.89679,121.85079], [24.89689,121.85082], [24.8969,121.85095],
+        [24.89678,121.85133], [24.89693,121.85093], [24.89691,121.85083], [24.89672,121.85073], [24.89667,121.85064], [24.89676,121.85059],
+        [24.89679,121.85043], [24.89712,121.85044], [24.89697,121.85035], [24.89688,121.85019], [24.89711,121.85024], [24.89723,121.8503],
+        [24.89745,121.85056], [24.89747,121.85064], [24.89735,121.85096], [24.89738,121.85106], [24.8975,121.85108], [24.89777,121.85097],
+        [24.89789,121.85097], [24.89804,121.85114], [24.89847,121.85138], [24.89863,121.85113], [24.89874,121.8511], [24.89884,121.85115],
+        [24.89906,121.8514], [24.89905,121.85184], [24.89913,121.85189], [24.89934,121.85182], [24.89946,121.85183], [24.90026,121.85209],
+        [24.90041,121.85222], [24.90062,121.8525], [24.90065,121.85273], [24.90071,121.85283], [24.90081,121.85285], [24.90102,121.85282],
+        [24.90122,121.85287], [24.90128,121.85295], [24.90127,121.85346], [24.90115,121.85417], [24.90119,121.85451], [24.90129,121.85459],
+        [24.90141,121.8548], [24.90149,121.85563], [24.90153,121.85573], [24.9017,121.85582], [24.90175,121.85571], [24.90179,121.85523],
+        [24.90211,121.8548], [24.90238,121.85419], [24.90252,121.8536], [24.90274,121.85337], [24.90305,121.8533], [24.90324,121.85337],
+        [24.9033,121.85346], [24.9033,121.85374], [24.9035,121.8543], [24.90377,121.85451], [24.90407,121.85464], [24.90419,121.85485],
+        [24.9044,121.85494], [24.90451,121.85492], [24.90458,121.855], [24.9046,121.85522], [24.90449,121.85583], [24.9045,121.85594],
+        [24.90462,121.85613], [24.90462,121.85624], [24.90441,121.85678], [24.90435,121.85726], [24.90436,121.85738], [24.90465,121.85769],
+        [24.90455,121.85812], [24.90481,121.85892]
+      ];
+
+      var STOPS = [
+        { at: [24.90486, 121.85896], pill: '起終點', dir: 'r', start: true, items: [['09:30', '龜山車站出發'], ['16:10', '回到龜山車站（搭乘火車返程）']] },
+        { at: [24.90724, 121.85033], pill: '10:00', dir: 'b', items: [['10:00', '頭城農場（梗枋古道登山口）']] },
+        { at: [24.90943, 121.8477], items: [['10:30', '古厝']] },
+        { at: [24.91139, 121.84271], items: [['11:10', '展望處']] },
+        { at: [24.91292, 121.83987], pill: '11:50', dir: 'r', items: [['11:50', '保安林界（全程最高點）']] },
+        { at: [24.91446, 121.83958], items: [['12:00', '過坪溪'], ['12:20', '接坪溪古道（休息）']] },
+        { at: [24.91237, 121.83835], items: [['12:50', '過溪']] },
+        { at: [24.90782, 121.83599], pill: '13:05', dir: 'r', items: [['13:05', '龜山島觀景台（休息用餐）'], ['13:30', '左下接象寮古道']] },
+        { at: [24.905, 121.8364], items: [['13:50', '梗枋溪鐵橋'], ['13:55', '石坑山叉路口（不上石坑山）']] },
+        { at: [24.90123, 121.84105], items: [['14:10', '往明湖福安宮叉路口（取左）']] },
+        { at: [24.89697, 121.84709], pill: '14:40', dir: 'b', items: [['14:40', '明湖福安宮・荷花池（休息）']] },
+        { at: [24.89678, 121.85132], pill: '15:25', dir: 'r', items: [['15:25', '岩藏山']] },
+        { at: [24.89864, 121.85113], items: [['15:40', '接回馬路（百合陵園）']] },
+        { at: [24.90144, 121.85514], items: [['15:50', '兩真宮']] }
+      ];
+
+      var map = L.map(el, {
+        scrollWheelZoom: false,
+        dragging: !L.Browser.mobile,
+        zoomSnap: 0.25,
+        renderer: L.canvas({ tolerance: 10 })
+      });
+      // 手機上地圖較窄，省略 Leaflet 字樣讓版權標示維持一行
+      map.attributionControl.setPrefix(el.clientWidth < 480 ? false : '<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
+
+      var topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+        subdomains: 'abc',
+        maxZoom: 17,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> 貢獻者, SRTM | &copy; <a href="https://opentopomap.org" target="_blank" rel="noopener">OpenTopoMap</a> <span style="white-space:nowrap">(CC-BY-SA)</span>'
+      });
+      var street = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> 貢獻者'
+      });
+      topo.addTo(map);
+      L.control.layers({ '地形圖': topo, '街道圖': street }).addTo(map);
+
+      // 地形圖伺服器沒回應時，自動改用街道圖
+      var topoLoaded = false, topoErrors = 0;
+      topo.on('tileload', function () { topoLoaded = true; });
+      topo.on('tileerror', function () {
+        topoErrors += 1;
+        if (!topoLoaded && topoErrors >= 4 && map.hasLayer(topo)) {
+          map.removeLayer(topo);
+          street.addTo(map);
+        }
+      });
+
+      L.polyline(ROUTE, { color: '#1a1a14', weight: 8, opacity: 0.5, interactive: false }).addTo(map);
+      var line = L.polyline(ROUTE, { color: '#e53935', weight: 4, opacity: 0.95, interactive: false }).addTo(map);
+
+      var popupOpts = { autoPanPaddingTopLeft: [10, 90], autoPanPaddingBottomRight: [10, 16] };
+
+      STOPS.forEach(function (s) {
+        var html = s.items.map(function (it) {
+          return '<div><span class="t">' + it[0] + '</span>' + it[1] + '</div>';
+        }).join('');
+        var dot = s.start
+          ? { radius: 7, color: '#b8972a', weight: 3, fillColor: '#f5f0e8', fillOpacity: 1 }
+          : { radius: s.pill ? 5 : 4, color: '#1a1a14', weight: 2, fillColor: '#d4a83a', fillOpacity: 1 };
+        L.circleMarker(s.at, dot).bindPopup(html, popupOpts).addTo(map);
+        if (s.pill) {
+          L.marker(s.at, {
+            icon: L.divIcon({
+              className: 'time-pill ' + s.dir + (s.start ? ' start' : ''),
+              html: '<span>' + s.pill + '</span>',
+              iconSize: [0, 0]
+            }),
+            keyboard: false
+          }).bindPopup(html, popupOpts).addTo(map);
+        }
+      });
+
+      map.fitBounds(line.getBounds(), { paddingTopLeft: [20, 20], paddingBottomRight: [72, 36] });
+      map.once('focus', function () { map.scrollWheelZoom.enable(); });
+    })();
+  </script>
+</body>
+</html>
